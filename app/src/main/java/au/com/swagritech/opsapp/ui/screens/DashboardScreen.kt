@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun DashboardScreen(
+    pilotName: String,
     onStartJob: () -> Unit,
     onFlightLog: () -> Unit,
     onReports: () -> Unit
@@ -29,6 +30,9 @@ fun DashboardScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Ops Dashboard", style = MaterialTheme.typography.headlineMedium)
+            if (pilotName.isNotBlank()) {
+                Text("Pilot: $pilotName")
+            }
             Button(onClick = onStartJob) { Text("Start Job") }
             Button(onClick = onFlightLog) { Text("Flight Log") }
             Button(onClick = onReports) { Text("Reports") }

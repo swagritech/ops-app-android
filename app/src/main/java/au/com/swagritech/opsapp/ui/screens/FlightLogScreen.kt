@@ -12,9 +12,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import au.com.swagritech.opsapp.model.ActiveJobResponse
 
 @Composable
-fun FlightLogScreen(onBack: () -> Unit) {
+fun FlightLogScreen(
+    loading: Boolean,
+    message: String,
+    activeJob: ActiveJobResponse?,
+    onLoadActiveJob: () -> Unit,
+    onBack: () -> Unit
+) {
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -25,7 +32,18 @@ fun FlightLogScreen(onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Flight Log", style = MaterialTheme.typography.headlineMedium)
-            Text("Flight create/queue sync wiring is next.")
+            Button(onClick = onLoadActiveJob, enabled = !loading) { Text("Load Active Job") }
+
+            if (!activeJob?.DisplayJobId.isNullOrBlank()) {
+                Text("Job: ${activeJob?.DisplayJobId}")
+                Text("Property: ${activeJob?.LocationProperty ?: "-"}")
+                Text("Aircraft: ${activeJob?.AircraftType ?: "-"}")
+            }
+
+            if (message.isNotBlank()) {
+                Text(message)
+            }
+
             Button(onClick = onBack) { Text("Back") }
         }
     }
