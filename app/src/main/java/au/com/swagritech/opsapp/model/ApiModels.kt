@@ -43,3 +43,41 @@ data class ActiveJobResponse(
     val JobStatus: String? = null,
     val error: String? = null
 )
+
+data class CreateFlightRequest(
+    val JobId: String?,
+    val Pilot: String,
+    val AircraftIdentifier: String,
+    val AircraftType: String,
+    val LocationProperty: String,
+    val SiteBlockId: String?,
+    val OperationType: String,
+    val VlosBvlos: String = "VLOS",
+    val BatteryId: String,
+    val TakeoffTimeUtc: String,
+    val LandingTimeUtc: String,
+    val FlightMinutes: Int,
+    val FlightDateTimeUtc: String,
+    val Notes: String?,
+    val OfflineClientId: String,
+    val BatteryCounted: Boolean = true,
+    val AircraftCounted: Boolean = true,
+    val BatteryCyclesAtFlight: Int? = null,
+    val AircraftMinutesAtFlight: Double? = null,
+    val IsCorrection: Boolean = false,
+    val CorrectionNotes: String? = null,
+    val Voided: Boolean = false,
+    val VoidReason: String? = null
+)
+
+data class CreateFlightResponse(
+    val status: String? = null,
+    val error: String? = null,
+    val message: String? = null
+)
+
+data class QueuedFlightItem(
+    val localQueueId: String,
+    val payload: CreateFlightRequest,
+    val queuedAtUtc: String
+)

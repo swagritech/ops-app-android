@@ -1,14 +1,23 @@
 package au.com.swagritech.opsapp.vm
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import au.com.swagritech.opsapp.data.FlightQueueStore
 import au.com.swagritech.opsapp.model.ActiveJobResponse
+import au.com.swagritech.opsapp.model.CreateFlightRequest
+import au.com.swagritech.opsapp.model.QueuedFlightItem
 import au.com.swagritech.opsapp.model.StartJobRequest
+import au.com.swagritech.opsapp.repo.ApiHttpException
 import au.com.swagritech.opsapp.repo.OpsRepository
+import java.io.IOException
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 import kotlinx.coroutines.launch
 
 data class UiState(
@@ -18,7 +27,8 @@ data class UiState(
     val microsoftSignedIn: Boolean = false,
     val signedInUsername: String = "",
     val currentPilot: String = "",
-    val activeJob: ActiveJobResponse? = null
+    val activeJob: ActiveJobResponse? = null,
+    val offlineQueueCount: Int = 0
 )
 
 class OpsViewModel(
@@ -48,12 +58,18 @@ class OpsViewModel(
         uiState = uiState.copy(message = message)
     }
 
-    fun resetAuthState() {
+    fun refreshQueueCount(context: Context) {
+        uiState = uiState.copy(offlineQueueCount = FlightQueueStore.count(context))
+    }
+
+    fun resetAuthState(context: Context) {
+        FlightQueueStore.clear(context)
         uiState = uiState.copy(
             identityVerified = false,
             microsoftSignedIn = false,
             signedInUsername = "",
             activeJob = null,
+            offlineQueueCount = 0,
             message = "Signed out"
         )
     }
@@ -131,6 +147,131 @@ class OpsViewModel(
                     uiState = uiState.copy(loading = false, message = "Load job error: ${it.message}")
                 }
         }
+    }
+
+    fun submitFlight(
+        context: Context,
+        aircraftIdentifier: String,
+        aircraftType: String,
+        batteryId: String,
+        operationType: String,
+        takeoffTimeUtc: String,
+        landingTimeUtc: String,
+        notes: String
+    ) {
+        val pilot = uiState.currentPilot.trim()
+        if (pilot.isBlank()) {
+            uiState = uiState.copy(message = "Pilot name is required")
+            return
+        }
+
+        val job = uiState.activeJob
+        if (job?.JobId.isNullOrBlank()) {
+            uiState = uiState.copy(message = "Load an active job before logging flight")
+            return
+        }
+
+        val minutes = calculateMinutes(takeoffTimeUtc, landingTimeUtc)
+        if (minutes <= 0) {
+            uiState = uiState.copy(message = "Invalid takeoff/landing UTC time")
+            return
+        }
+
+        val payload = CreateFlightRequest(
+            JobId = job?.JobId,
+            Pilot = pilot,
+            AircraftIdentifier = aircraftIdentifier.trim(),
+            AircraftType = aircraftType.trim(),
+            LocationProperty = job?.LocationProperty ?: "",
+            SiteBlockId = job?.SiteBlockId,
+            OperationType = operationType.trim(),
+            BatteryId = batteryId.trim(),
+            TakeoffTimeUtc = takeoffTimeUtc.trim(),
+            LandingTimeUtc = landingTimeUtc.trim(),
+            FlightMinutes = minutes,
+            FlightDateTimeUtc = takeoffTimeUtc.trim(),
+            Notes = notes.trim().ifBlank { null },
+            OfflineClientId = UUID.randomUUID().toString()
+        )
+
+        viewModelScope.launch {
+            uiState = uiState.copy(loading = true, message = "Submitting flight...")
+            val result = repository.createFlight(payload)
+            result.onSuccess { response ->
+                if (response.status == "flight logged" || response.status == "duplicate") {
+                    uiState = uiState.copy(loading = false, message = "Flight logged")
+                } else {
+                    uiState = uiState.copy(loading = false, message = response.error ?: response.message ?: "Unexpected response")
+                }
+            }.onFailure { error ->
+                if (shouldQueue(error)) {
+                    queueFlight(context, payload)
+                    refreshQueueCount(context)
+                    uiState = uiState.copy(
+                        loading = false,
+                        message = "Offline/network issue. Flight queued for sync (${uiState.offlineQueueCount} queued)."
+                    )
+                } else {
+                    uiState = uiState.copy(loading = false, message = "Flight submit failed: ${error.message}")
+                }
+            }
+        }
+    }
+
+    fun syncQueuedFlights(context: Context) {
+        val queued = FlightQueueStore.getAll(context)
+        if (queued.isEmpty()) {
+            uiState = uiState.copy(message = "No queued flights to sync", offlineQueueCount = 0)
+            return
+        }
+
+        viewModelScope.launch {
+            uiState = uiState.copy(loading = true, message = "Syncing ${queued.size} queued flights...")
+            var sent = 0
+            queued.forEach { item ->
+                val result = repository.createFlight(item.payload)
+                val remove = result.isSuccess || isDuplicate(result.exceptionOrNull())
+                if (remove) {
+                    FlightQueueStore.removeById(context, item.localQueueId)
+                    sent += 1
+                }
+            }
+            refreshQueueCount(context)
+            uiState = uiState.copy(
+                loading = false,
+                message = "Synced $sent flight(s). ${uiState.offlineQueueCount} still queued."
+            )
+        }
+    }
+
+    private fun queueFlight(context: Context, payload: CreateFlightRequest) {
+        val item = QueuedFlightItem(
+            localQueueId = UUID.randomUUID().toString(),
+            payload = payload,
+            queuedAtUtc = Instant.now().toString()
+        )
+        FlightQueueStore.enqueue(context, item)
+    }
+
+    private fun shouldQueue(error: Throwable): Boolean {
+        return when (error) {
+            is IOException -> true
+            is ApiHttpException -> error.code >= 500
+            else -> false
+        }
+    }
+
+    private fun isDuplicate(error: Throwable?): Boolean {
+        return (error as? ApiHttpException)?.code == 409
+    }
+
+    private fun calculateMinutes(takeoffUtc: String, landingUtc: String): Int {
+        return runCatching {
+            val start = Instant.parse(takeoffUtc)
+            val end = Instant.parse(landingUtc)
+            val minutes = Duration.between(start, end).toMinutes()
+            minutes.toInt()
+        }.getOrDefault(0)
     }
 }
 

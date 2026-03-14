@@ -28,6 +28,10 @@ Default API base URL is set in `BuildConfig.API_BASE_URL` and can be overridden 
 - Session persistence is implemented (access token + refresh token saved locally).
 - App startup attempts token refresh and restores signed-in state.
 - Dashboard includes explicit Sign Out action that clears local auth state.
+- Flight logging screen now supports:
+  - create flight submission to `create_flight`
+  - offline queue persistence
+  - manual queue sync
 - Redirect URI currently configured as `swatops://auth/callback`.
 - You must register this redirect URI in Entra app registration for Android client testing.
 

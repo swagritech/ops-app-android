@@ -49,6 +49,7 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
     LaunchedEffect(Unit) {
         authManager.restoreFromStore()
         authManager.refreshIfNeeded()
+        vm.refreshQueueCount(activity.applicationContext)
         if (!AuthSession.accessToken.isNullOrBlank()) {
             vm.setMicrosoftSignedIn(AuthSession.username ?: "Microsoft User")
         } else if (!AuthSession.lastError.isNullOrBlank()) {
@@ -81,7 +82,7 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 onReports = { navController.navigate(Routes.Reports) },
                 onSignOut = {
                     authManager.signOut()
-                    vm.resetAuthState()
+                    vm.resetAuthState(activity.applicationContext)
                     navController.navigate(Routes.Login) {
                         popUpTo(0)
                     }
@@ -101,7 +102,21 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 loading = vm.uiState.loading,
                 message = vm.uiState.message,
                 activeJob = vm.uiState.activeJob,
+                queueCount = vm.uiState.offlineQueueCount,
                 onLoadActiveJob = { vm.loadActiveJob() },
+                onSubmitFlight = { id, type, battery, op, tko, lnd, notes ->
+                    vm.submitFlight(
+                        context = activity.applicationContext,
+                        aircraftIdentifier = id,
+                        aircraftType = type,
+                        batteryId = battery,
+                        operationType = op,
+                        takeoffTimeUtc = tko,
+                        landingTimeUtc = lnd,
+                        notes = notes
+                    )
+                },
+                onSyncQueue = { vm.syncQueuedFlights(activity.applicationContext) },
                 onBack = { navController.popBackStack() }
             )
         }

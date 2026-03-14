@@ -2,6 +2,8 @@ package au.com.swagritech.opsapp.api
 
 import au.com.swagritech.opsapp.model.ActiveJobResponse
 import au.com.swagritech.opsapp.model.AuthIdentityResponse
+import au.com.swagritech.opsapp.model.CreateFlightRequest
+import au.com.swagritech.opsapp.model.CreateFlightResponse
 import au.com.swagritech.opsapp.model.StartJobRequest
 import au.com.swagritech.opsapp.model.StartJobResponse
 import retrofit2.Response
@@ -19,4 +21,7 @@ interface OpsApiService {
 
     @GET("get_active_job")
     suspend fun getActiveJob(@Query("Pilot") pilot: String): Response<ActiveJobResponse>
+
+    @POST("create_flight")
+    suspend fun createFlight(@Body payload: CreateFlightRequest): Response<CreateFlightResponse>
 }
