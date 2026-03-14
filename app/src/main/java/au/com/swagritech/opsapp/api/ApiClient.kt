@@ -24,11 +24,11 @@ object ApiClient {
                 val token = AuthSession.accessToken
                 val easyAuthToken = AuthSession.easyAuthToken
                 val requestBuilder = chain.request().newBuilder()
-                if (!token.isNullOrBlank()) {
-                    requestBuilder.addHeader("Authorization", "Bearer $token")
-                }
                 if (!easyAuthToken.isNullOrBlank()) {
                     requestBuilder.addHeader("X-ZUMO-AUTH", easyAuthToken)
+                } else if (!token.isNullOrBlank()) {
+                    // Fallback only when EasyAuth token has not yet been established.
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
                 }
                 chain.proceed(requestBuilder.build())
             }

@@ -22,7 +22,7 @@ android {
         }
         manifestPlaceholders["appAuthRedirectScheme"] = "swatops"
 
-        buildConfigField("String", "API_BASE_URL", "\"https://api.swagritech.com.au/api/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://swagri-reoc-api-01-a7b4a8c7aseecuec.southeastasia-01.azurewebsites.net/api/\"")
         buildConfigField("String", "AUTH_SCOPE", "\"openid profile email offline_access User.Read\"")
     }
 
@@ -35,7 +35,7 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://api.swagritech.com.au/api/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://swagri-reoc-api-01-a7b4a8c7aseecuec.southeastasia-01.azurewebsites.net/api/\"")
             buildConfigField("String", "AUTH_SCOPE", "\"openid profile email offline_access User.Read\"")
         }
     }
