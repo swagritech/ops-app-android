@@ -23,12 +23,20 @@ object ApiClient {
             .addInterceptor { chain ->
                 val token = AuthSession.accessToken
                 val easyAuthToken = AuthSession.easyAuthToken
+                val principalName = AuthSession.principalName
+                val principalId = AuthSession.principalId
                 val requestBuilder = chain.request().newBuilder()
                 if (!easyAuthToken.isNullOrBlank()) {
                     requestBuilder.addHeader("X-ZUMO-AUTH", easyAuthToken)
                 } else if (!token.isNullOrBlank()) {
                     // Fallback only when EasyAuth token has not yet been established.
                     requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                if (!principalName.isNullOrBlank()) {
+                    requestBuilder.addHeader("X-MS-CLIENT-PRINCIPAL-NAME", principalName)
+                }
+                if (!principalId.isNullOrBlank()) {
+                    requestBuilder.addHeader("X-MS-CLIENT-PRINCIPAL-ID", principalId)
                 }
                 chain.proceed(requestBuilder.build())
             }

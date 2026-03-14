@@ -58,6 +58,8 @@ class AuthManager(private val context: Context) {
         AuthSession.username = saved.username
         AuthSession.expiresAtSeconds = saved.expiresAtSeconds
         AuthSession.easyAuthToken = saved.easyAuthToken
+        AuthSession.principalName = saved.principalName
+        AuthSession.principalId = saved.principalId
     }
 
     suspend fun refreshIfNeeded(): Result<Boolean> {
@@ -87,7 +89,9 @@ class AuthManager(private val context: Context) {
                             refreshToken = AuthSession.refreshToken,
                             username = AuthSession.username,
                             expiresAtSeconds = AuthSession.expiresAtSeconds,
-                            easyAuthToken = AuthSession.easyAuthToken
+                            easyAuthToken = AuthSession.easyAuthToken,
+                            principalName = AuthSession.principalName,
+                            principalId = AuthSession.principalId
                         )
                     )
                     cont.resume(Result.success(true))

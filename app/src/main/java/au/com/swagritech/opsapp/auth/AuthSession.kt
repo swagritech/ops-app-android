@@ -19,6 +19,12 @@ object AuthSession {
     @Volatile
     var easyAuthToken: String? = null
 
+    @Volatile
+    var principalName: String? = null
+
+    @Volatile
+    var principalId: String? = null
+
     fun clear() {
         accessToken = null
         username = null
@@ -26,6 +32,8 @@ object AuthSession {
         refreshToken = null
         expiresAtSeconds = null
         easyAuthToken = null
+        principalName = null
+        principalId = null
     }
 
     fun isAccessTokenLikelyValid(nowEpochSeconds: Long = System.currentTimeMillis() / 1000L): Boolean {

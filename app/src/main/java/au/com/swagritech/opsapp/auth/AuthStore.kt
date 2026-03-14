@@ -7,7 +7,9 @@ data class PersistedAuth(
     val refreshToken: String?,
     val username: String?,
     val expiresAtSeconds: Long?,
-    val easyAuthToken: String?
+    val easyAuthToken: String?,
+    val principalName: String?,
+    val principalId: String?
 )
 
 object AuthStore {
@@ -17,6 +19,8 @@ object AuthStore {
     private const val KEY_USERNAME = "username"
     private const val KEY_EXPIRES_AT = "expires_at"
     private const val KEY_EASYAUTH_TOKEN = "easyauth_token"
+    private const val KEY_PRINCIPAL_NAME = "principal_name"
+    private const val KEY_PRINCIPAL_ID = "principal_id"
 
     fun save(context: Context, auth: PersistedAuth) {
         val editor = context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit()
@@ -24,6 +28,8 @@ object AuthStore {
         editor.putString(KEY_REFRESH_TOKEN, auth.refreshToken)
         editor.putString(KEY_USERNAME, auth.username)
         editor.putString(KEY_EASYAUTH_TOKEN, auth.easyAuthToken)
+        editor.putString(KEY_PRINCIPAL_NAME, auth.principalName)
+        editor.putString(KEY_PRINCIPAL_ID, auth.principalId)
         if (auth.expiresAtSeconds != null) {
             editor.putLong(KEY_EXPIRES_AT, auth.expiresAtSeconds)
         } else {
@@ -38,8 +44,10 @@ object AuthStore {
         val refresh = prefs.getString(KEY_REFRESH_TOKEN, null)
         val username = prefs.getString(KEY_USERNAME, null)
         val easyAuthToken = prefs.getString(KEY_EASYAUTH_TOKEN, null)
+        val principalName = prefs.getString(KEY_PRINCIPAL_NAME, null)
+        val principalId = prefs.getString(KEY_PRINCIPAL_ID, null)
         val expiresAt = if (prefs.contains(KEY_EXPIRES_AT)) prefs.getLong(KEY_EXPIRES_AT, 0L) else null
-        return PersistedAuth(access, refresh, username, expiresAt, easyAuthToken)
+        return PersistedAuth(access, refresh, username, expiresAt, easyAuthToken, principalName, principalId)
     }
 
     fun clear(context: Context) {
