@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+layout.buildDirectory.set(file("C:/temp/ops-app-android/app"))
+
 android {
     namespace = "au.com.swagritech.opsapp"
     compileSdk = 35
@@ -18,8 +20,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        manifestPlaceholders["appAuthRedirectScheme"] = "swatops"
 
         buildConfigField("String", "API_BASE_URL", "\"https://api.swagritech.com.au/api/\"")
+        buildConfigField("String", "AUTH_SCOPE", "\"openid profile email offline_access User.Read\"")
     }
 
     buildTypes {
@@ -32,6 +36,7 @@ android {
         }
         debug {
             buildConfigField("String", "API_BASE_URL", "\"https://api.swagritech.com.au/api/\"")
+            buildConfigField("String", "AUTH_SCOPE", "\"openid profile email offline_access User.Read\"")
         }
     }
 
@@ -74,6 +79,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("net.openid:appauth:0.11.1")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")

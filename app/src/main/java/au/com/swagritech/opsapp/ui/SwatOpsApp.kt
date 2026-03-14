@@ -1,5 +1,6 @@
 package au.com.swagritech.opsapp.ui
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +24,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import au.com.swagritech.opsapp.auth.AuthManager
+import au.com.swagritech.opsapp.auth.AuthSession
 import au.com.swagritech.opsapp.ui.screens.DashboardScreen
 import au.com.swagritech.opsapp.ui.screens.FlightLogScreen
 import au.com.swagritech.opsapp.ui.screens.ReportsScreen
@@ -38,14 +42,26 @@ private object Routes {
 }
 
 @Composable
-fun SwatOpsApp(navController: NavHostController = rememberNavController()) {
+fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNavController()) {
     val vm: OpsViewModel = viewModel(factory = OpsViewModelFactory())
+    val authManager = remember { AuthManager(activity) }
+
+    LaunchedEffect(Unit) {
+        if (!AuthSession.accessToken.isNullOrBlank()) {
+            vm.setMicrosoftSignedIn(AuthSession.username ?: "Microsoft User")
+        } else if (!AuthSession.lastError.isNullOrBlank()) {
+            vm.setMicrosoftSignInError(AuthSession.lastError ?: "Sign-in failed")
+        }
+    }
 
     NavHost(navController = navController, startDestination = Routes.Login) {
         composable(Routes.Login) {
             LoginScreen(
                 loading = vm.uiState.loading,
                 message = vm.uiState.message,
+                signedInUsername = vm.uiState.signedInUsername,
+                microsoftSignedIn = vm.uiState.microsoftSignedIn,
+                onMicrosoftSignIn = { authManager.startSignIn() },
                 onVerifyIdentity = { vm.verifyIdentity() },
                 onPilotChange = { vm.setPilotName(it) },
                 onContinue = {
@@ -90,7 +106,10 @@ fun SwatOpsApp(navController: NavHostController = rememberNavController()) {
 private fun LoginScreen(
     loading: Boolean,
     message: String,
+    signedInUsername: String,
+    microsoftSignedIn: Boolean,
     onPilotChange: (String) -> Unit,
+    onMicrosoftSignIn: () -> Unit,
     onVerifyIdentity: () -> Unit,
     onContinue: () -> Unit
 ) {
@@ -108,6 +127,14 @@ private fun LoginScreen(
             Text("Southwest Agri-Tech", style = MaterialTheme.typography.headlineMedium)
             Text("ReOC Operations Platform", style = MaterialTheme.typography.bodyLarge)
 
+            Button(onClick = onMicrosoftSignIn, modifier = Modifier.padding(top = 16.dp), enabled = !loading) {
+                Text(if (microsoftSignedIn) "Microsoft Signed In" else "Sign in with Microsoft")
+            }
+
+            if (signedInUsername.isNotBlank()) {
+                Text("Signed in: $signedInUsername", modifier = Modifier.padding(top = 8.dp))
+            }
+
             OutlinedTextField(
                 value = pilotName,
                 onValueChange = {
@@ -115,11 +142,11 @@ private fun LoginScreen(
                     onPilotChange(it)
                 },
                 label = { Text("Pilot Name") },
-                modifier = Modifier.padding(top = 24.dp)
+                modifier = Modifier.padding(top = 16.dp)
             )
 
             Button(onClick = onVerifyIdentity, modifier = Modifier.padding(top = 16.dp), enabled = !loading) {
-                Text("Check Identity")
+                Text("Verify API Identity")
             }
 
             Button(onClick = onContinue, modifier = Modifier.padding(top = 8.dp), enabled = !loading) {

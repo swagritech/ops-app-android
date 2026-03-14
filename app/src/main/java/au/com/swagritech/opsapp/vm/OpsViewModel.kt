@@ -15,6 +15,8 @@ data class UiState(
     val loading: Boolean = false,
     val message: String = "",
     val identityVerified: Boolean = false,
+    val microsoftSignedIn: Boolean = false,
+    val signedInUsername: String = "",
     val currentPilot: String = "",
     val activeJob: ActiveJobResponse? = null
 )
@@ -27,6 +29,23 @@ class OpsViewModel(
 
     fun setPilotName(name: String) {
         uiState = uiState.copy(currentPilot = name)
+    }
+
+    fun setMicrosoftSignedIn(username: String?) {
+        uiState = uiState.copy(
+            microsoftSignedIn = true,
+            signedInUsername = username.orEmpty(),
+            currentPilot = if (uiState.currentPilot.isBlank()) (username ?: "") else uiState.currentPilot,
+            message = "Microsoft sign-in successful"
+        )
+    }
+
+    fun setMicrosoftSignInError(message: String) {
+        uiState = uiState.copy(microsoftSignedIn = false, message = message)
+    }
+
+    fun setMessage(message: String) {
+        uiState = uiState.copy(message = message)
     }
 
     fun verifyIdentity() {

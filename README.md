@@ -12,6 +12,7 @@ This repo is intentionally isolated from the current web app production setup.
   - `get_auth_identity`
   - `start_job`
   - `get_active_job`
+- Native Microsoft sign-in scaffold using OAuth2 (AppAuth)
 
 ## Next setup steps
 1. Open in Android Studio (latest stable).
@@ -23,5 +24,7 @@ This repo is intentionally isolated from the current web app production setup.
 Default API base URL is set in `BuildConfig.API_BASE_URL` and can be overridden per build type.
 
 ## Current auth note
-The backend uses Easy Auth session/cookies. Native token flow is not implemented yet in this commit, so identity verification depends on backend auth session behavior for mobile clients.
+- Native OAuth sign-in flow is implemented in-app and stores access token in memory.
+- Redirect URI currently configured as `swatops://auth/callback`.
+- You must register this redirect URI in Entra app registration for Android client testing.
 
