@@ -116,10 +116,6 @@ class AuthManager(private val context: Context) {
 
         val accessToken = AuthSession.accessToken
         if (accessToken.isNullOrBlank()) {
-            return Result.success(false)
-        }
-        val idToken = AuthSession.idToken
-        if (idToken.isNullOrBlank()) {
             AuthSession.lastError = "Session expired. Sign in with Microsoft again."
             return Result.success(false)
         }
@@ -127,7 +123,7 @@ class AuthManager(private val context: Context) {
         val (easyAuthToken, easyAuthError) = withContext(Dispatchers.IO) {
             EasyAuthBridge.exchangeForSession(
                 accessToken = accessToken,
-                idToken = idToken
+                idToken = AuthSession.idToken
             )
         }
         AuthSession.easyAuthToken = easyAuthToken

@@ -14,11 +14,11 @@ object EasyAuthBridge {
         val client = ApiClient.authHttpClient
         val jsonType = "application/json; charset=utf-8".toMediaType()
 
-        if (idToken.isNullOrBlank()) {
+        if (accessToken.isNullOrBlank()) {
             return null to "Session expired. Sign in with Microsoft again."
         }
 
-        val payload = JSONObject().put("id_token", idToken)
+        val payload = JSONObject().put("access_token", accessToken)
         val request = Request.Builder()
             .url(url)
             .post(payload.toString().toRequestBody(jsonType))
