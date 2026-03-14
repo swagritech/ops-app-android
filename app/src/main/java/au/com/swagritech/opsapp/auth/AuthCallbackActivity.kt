@@ -34,11 +34,26 @@ class AuthCallbackActivity : ComponentActivity() {
         authService.performTokenRequest(tokenRequest) { tokenResponse, tokenEx ->
             if (tokenResponse != null && !tokenResponse.accessToken.isNullOrBlank()) {
                 AuthSession.accessToken = tokenResponse.accessToken
-                AuthSession.username = tokenResponse.idToken ?: "Microsoft User"
+                AuthSession.refreshToken = tokenResponse.refreshToken
+                AuthSession.expiresAtSeconds = tokenResponse.accessTokenExpirationTime?.div(1000L)
+                AuthSession.username = tokenResponse.additionalParameters["preferred_username"]
+                    ?: tokenResponse.additionalParameters["upn"]
+                    ?: tokenResponse.idToken
+                    ?: "Microsoft User"
                 AuthSession.lastError = null
+                AuthStore.save(
+                    this,
+                    PersistedAuth(
+                        accessToken = AuthSession.accessToken ?: "",
+                        refreshToken = AuthSession.refreshToken,
+                        username = AuthSession.username,
+                        expiresAtSeconds = AuthSession.expiresAtSeconds
+                    )
+                )
             } else {
                 AuthSession.clear()
                 AuthSession.lastError = tokenEx?.errorDescription ?: tokenEx?.message ?: "Token exchange failed"
+                AuthStore.clear(this)
             }
             returnToApp()
         }

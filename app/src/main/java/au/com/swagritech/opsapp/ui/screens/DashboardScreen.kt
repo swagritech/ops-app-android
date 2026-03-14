@@ -18,7 +18,8 @@ fun DashboardScreen(
     pilotName: String,
     onStartJob: () -> Unit,
     onFlightLog: () -> Unit,
-    onReports: () -> Unit
+    onReports: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     Scaffold { padding ->
         Column(
@@ -36,6 +37,7 @@ fun DashboardScreen(
             Button(onClick = onStartJob) { Text("Start Job") }
             Button(onClick = onFlightLog) { Text("Flight Log") }
             Button(onClick = onReports) { Text("Reports") }
+            Button(onClick = onSignOut) { Text("Sign Out") }
         }
     }
 }

@@ -48,6 +48,16 @@ class OpsViewModel(
         uiState = uiState.copy(message = message)
     }
 
+    fun resetAuthState() {
+        uiState = uiState.copy(
+            identityVerified = false,
+            microsoftSignedIn = false,
+            signedInUsername = "",
+            activeJob = null,
+            message = "Signed out"
+        )
+    }
+
     fun verifyIdentity() {
         viewModelScope.launch {
             uiState = uiState.copy(loading = true, message = "Checking identity...")

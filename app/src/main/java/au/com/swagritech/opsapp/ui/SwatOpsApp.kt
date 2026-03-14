@@ -44,9 +44,11 @@ private object Routes {
 @Composable
 fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNavController()) {
     val vm: OpsViewModel = viewModel(factory = OpsViewModelFactory())
-    val authManager = remember { AuthManager(activity) }
+    val authManager = remember { AuthManager(activity.applicationContext) }
 
     LaunchedEffect(Unit) {
+        authManager.restoreFromStore()
+        authManager.refreshIfNeeded()
         if (!AuthSession.accessToken.isNullOrBlank()) {
             vm.setMicrosoftSignedIn(AuthSession.username ?: "Microsoft User")
         } else if (!AuthSession.lastError.isNullOrBlank()) {
@@ -61,7 +63,7 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 message = vm.uiState.message,
                 signedInUsername = vm.uiState.signedInUsername,
                 microsoftSignedIn = vm.uiState.microsoftSignedIn,
-                onMicrosoftSignIn = { authManager.startSignIn() },
+                onMicrosoftSignIn = { authManager.startSignIn(activity) },
                 onVerifyIdentity = { vm.verifyIdentity() },
                 onPilotChange = { vm.setPilotName(it) },
                 onContinue = {
@@ -76,7 +78,14 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 pilotName = vm.uiState.currentPilot,
                 onStartJob = { navController.navigate(Routes.StartJob) },
                 onFlightLog = { navController.navigate(Routes.FlightLog) },
-                onReports = { navController.navigate(Routes.Reports) }
+                onReports = { navController.navigate(Routes.Reports) },
+                onSignOut = {
+                    authManager.signOut()
+                    vm.resetAuthState()
+                    navController.navigate(Routes.Login) {
+                        popUpTo(0)
+                    }
+                }
             )
         }
         composable(Routes.StartJob) {

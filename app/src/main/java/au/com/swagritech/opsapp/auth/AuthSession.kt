@@ -10,9 +10,25 @@ object AuthSession {
     @Volatile
     var lastError: String? = null
 
+    @Volatile
+    var refreshToken: String? = null
+
+    @Volatile
+    var expiresAtSeconds: Long? = null
+
     fun clear() {
         accessToken = null
         username = null
         lastError = null
+        refreshToken = null
+        expiresAtSeconds = null
+    }
+
+    fun isAccessTokenLikelyValid(nowEpochSeconds: Long = System.currentTimeMillis() / 1000L): Boolean {
+        val token = accessToken
+        val exp = expiresAtSeconds
+        if (token.isNullOrBlank()) return false
+        if (exp == null) return true
+        return (exp - nowEpochSeconds) > 60
     }
 }
