@@ -62,14 +62,15 @@ class AuthCallbackActivity : ComponentActivity() {
                     AuthSession.principalId = claims?.objectId
 
                     // Exchange provider token for EasyAuth token used by Azure App Service auth pipeline.
-                    val easyAuth = exchangeForEasyAuthToken(
+                    val (easyAuth, easyAuthError) = exchangeForEasyAuthToken(
                         accessToken = tokenResponse.accessToken,
                         idToken = tokenResponse.idToken
                     )
                     AuthSession.easyAuthToken = easyAuth
 
                     if (easyAuth.isNullOrBlank()) {
-                        AuthSession.lastError = "Signed in, but EasyAuth session token was not returned"
+                        AuthSession.lastError = easyAuthError
+                            ?: "Signed in, but EasyAuth session token was not returned"
                     } else {
                         AuthSession.lastError = null
                     }
@@ -131,12 +132,19 @@ class AuthCallbackActivity : ComponentActivity() {
         }.getOrNull()
     }
 
-    private fun exchangeForEasyAuthToken(accessToken: String?, idToken: String?): String? {
-        val url = buildEasyAuthLoginUrl() ?: return null
+    private fun exchangeForEasyAuthToken(accessToken: String?, idToken: String?): Pair<String?, String?> {
+        val url = buildEasyAuthLoginUrl() ?: return (null to "EasyAuth login URL could not be built")
         val client = OkHttpClient()
         val jsonType = "application/json; charset=utf-8".toMediaType()
 
+        val diagnostics = mutableListOf<String>()
         val payloads = mutableListOf<JSONObject>()
+        if (!accessToken.isNullOrBlank() || !idToken.isNullOrBlank()) {
+            val combined = JSONObject()
+            if (!accessToken.isNullOrBlank()) combined.put("access_token", accessToken)
+            if (!idToken.isNullOrBlank()) combined.put("id_token", idToken)
+            payloads.add(combined)
+        }
         if (!accessToken.isNullOrBlank()) payloads.add(JSONObject().put("access_token", accessToken))
         if (!idToken.isNullOrBlank()) payloads.add(JSONObject().put("id_token", idToken))
 
@@ -154,12 +162,16 @@ class AuthCallbackActivity : ComponentActivity() {
                     val token = runCatching {
                         JSONObject(body).optString("authenticationToken").ifBlank { null }
                     }.getOrNull()
-                    if (!token.isNullOrBlank()) return token
+                    if (!token.isNullOrBlank()) return token to null
+                    diagnostics.add("HTTP ${resp.code}: no authenticationToken in body")
+                } else {
+                    val body = resp.body?.string().orEmpty().take(200)
+                    diagnostics.add("HTTP ${resp.code}: $body")
                 }
             }
         }
 
-        return null
+        return null to diagnostics.joinToString(" | ").ifBlank { "EasyAuth exchange failed" }
     }
 
     private fun buildEasyAuthLoginUrl(): String? {
