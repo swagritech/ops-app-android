@@ -67,7 +67,9 @@ data class CreateFlightRequest(
     val IsCorrection: Boolean = false,
     val CorrectionNotes: String? = null,
     val Voided: Boolean = false,
-    val VoidReason: String? = null
+    val VoidReason: String? = null,
+    val Latitude: Double? = null,
+    val Longitude: Double? = null
 )
 
 data class CreateFlightResponse(

@@ -32,6 +32,7 @@ Default API base URL is set in `BuildConfig.API_BASE_URL` and can be overridden 
   - create flight submission to `create_flight`
   - offline queue persistence
   - manual queue sync
+  - GPS capture (`Use Current GPS`) and Latitude/Longitude payload fields
 - Redirect URI currently configured as `swatops://auth/callback`.
 - You must register this redirect URI in Entra app registration for Android client testing.
 

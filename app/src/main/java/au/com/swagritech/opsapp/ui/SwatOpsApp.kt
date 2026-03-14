@@ -104,7 +104,7 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 activeJob = vm.uiState.activeJob,
                 queueCount = vm.uiState.offlineQueueCount,
                 onLoadActiveJob = { vm.loadActiveJob() },
-                onSubmitFlight = { id, type, battery, op, tko, lnd, notes ->
+                onSubmitFlight = { id, type, battery, op, tko, lnd, notes, lat, lon ->
                     vm.submitFlight(
                         context = activity.applicationContext,
                         aircraftIdentifier = id,
@@ -113,7 +113,9 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                         operationType = op,
                         takeoffTimeUtc = tko,
                         landingTimeUtc = lnd,
-                        notes = notes
+                        notes = notes,
+                        latitudeText = lat,
+                        longitudeText = lon
                     )
                 },
                 onSyncQueue = { vm.syncQueuedFlights(activity.applicationContext) },

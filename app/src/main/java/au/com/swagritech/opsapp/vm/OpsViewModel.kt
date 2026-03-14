@@ -157,7 +157,9 @@ class OpsViewModel(
         operationType: String,
         takeoffTimeUtc: String,
         landingTimeUtc: String,
-        notes: String
+        notes: String,
+        latitudeText: String,
+        longitudeText: String
     ) {
         val pilot = uiState.currentPilot.trim()
         if (pilot.isBlank()) {
@@ -177,6 +179,25 @@ class OpsViewModel(
             return
         }
 
+        val latitude = latitudeText.trim().takeIf { it.isNotBlank() }?.toDoubleOrNull()
+        val longitude = longitudeText.trim().takeIf { it.isNotBlank() }?.toDoubleOrNull()
+        if (latitudeText.isNotBlank() && latitude == null) {
+            uiState = uiState.copy(message = "Latitude must be numeric")
+            return
+        }
+        if (longitudeText.isNotBlank() && longitude == null) {
+            uiState = uiState.copy(message = "Longitude must be numeric")
+            return
+        }
+        if (latitude != null && (latitude < -90.0 || latitude > 90.0)) {
+            uiState = uiState.copy(message = "Latitude out of range (-90 to 90)")
+            return
+        }
+        if (longitude != null && (longitude < -180.0 || longitude > 180.0)) {
+            uiState = uiState.copy(message = "Longitude out of range (-180 to 180)")
+            return
+        }
+
         val payload = CreateFlightRequest(
             JobId = job?.JobId,
             Pilot = pilot,
@@ -191,7 +212,9 @@ class OpsViewModel(
             FlightMinutes = minutes,
             FlightDateTimeUtc = takeoffTimeUtc.trim(),
             Notes = notes.trim().ifBlank { null },
-            OfflineClientId = UUID.randomUUID().toString()
+            OfflineClientId = UUID.randomUUID().toString(),
+            Latitude = latitude,
+            Longitude = longitude
         )
 
         viewModelScope.launch {
