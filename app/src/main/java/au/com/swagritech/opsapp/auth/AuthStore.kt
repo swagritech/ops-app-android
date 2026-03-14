@@ -4,6 +4,7 @@ import android.content.Context
 
 data class PersistedAuth(
     val accessToken: String,
+    val idToken: String?,
     val refreshToken: String?,
     val username: String?,
     val expiresAtSeconds: Long?,
@@ -15,6 +16,7 @@ data class PersistedAuth(
 object AuthStore {
     private const val PREF = "swat_auth"
     private const val KEY_ACCESS_TOKEN = "access_token"
+    private const val KEY_ID_TOKEN = "id_token"
     private const val KEY_REFRESH_TOKEN = "refresh_token"
     private const val KEY_USERNAME = "username"
     private const val KEY_EXPIRES_AT = "expires_at"
@@ -25,6 +27,7 @@ object AuthStore {
     fun save(context: Context, auth: PersistedAuth) {
         val editor = context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit()
         editor.putString(KEY_ACCESS_TOKEN, auth.accessToken)
+        editor.putString(KEY_ID_TOKEN, auth.idToken)
         editor.putString(KEY_REFRESH_TOKEN, auth.refreshToken)
         editor.putString(KEY_USERNAME, auth.username)
         editor.putString(KEY_EASYAUTH_TOKEN, auth.easyAuthToken)
@@ -41,13 +44,14 @@ object AuthStore {
     fun load(context: Context): PersistedAuth? {
         val prefs = context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
         val access = prefs.getString(KEY_ACCESS_TOKEN, null) ?: return null
+        val idToken = prefs.getString(KEY_ID_TOKEN, null)
         val refresh = prefs.getString(KEY_REFRESH_TOKEN, null)
         val username = prefs.getString(KEY_USERNAME, null)
         val easyAuthToken = prefs.getString(KEY_EASYAUTH_TOKEN, null)
         val principalName = prefs.getString(KEY_PRINCIPAL_NAME, null)
         val principalId = prefs.getString(KEY_PRINCIPAL_ID, null)
         val expiresAt = if (prefs.contains(KEY_EXPIRES_AT)) prefs.getLong(KEY_EXPIRES_AT, 0L) else null
-        return PersistedAuth(access, refresh, username, expiresAt, easyAuthToken, principalName, principalId)
+        return PersistedAuth(access, idToken, refresh, username, expiresAt, easyAuthToken, principalName, principalId)
     }
 
     fun clear(context: Context) {

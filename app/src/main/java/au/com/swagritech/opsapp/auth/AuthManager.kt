@@ -55,6 +55,7 @@ class AuthManager(private val context: Context) {
     fun restoreFromStore() {
         val saved = AuthStore.load(context) ?: return
         AuthSession.accessToken = saved.accessToken
+        AuthSession.idToken = saved.idToken
         AuthSession.refreshToken = saved.refreshToken
         AuthSession.username = saved.username
         AuthSession.expiresAtSeconds = saved.expiresAtSeconds
@@ -80,6 +81,7 @@ class AuthManager(private val context: Context) {
             authService.performTokenRequest(request) { tokenResponse, tokenEx ->
                 if (tokenResponse != null && !tokenResponse.accessToken.isNullOrBlank()) {
                     AuthSession.accessToken = tokenResponse.accessToken
+                    AuthSession.idToken = tokenResponse.idToken ?: AuthSession.idToken
                     AuthSession.refreshToken = tokenResponse.refreshToken ?: refreshToken
                     AuthSession.expiresAtSeconds = tokenResponse.accessTokenExpirationTime?.div(1000L)
 
@@ -87,6 +89,7 @@ class AuthManager(private val context: Context) {
                         context,
                         PersistedAuth(
                             accessToken = AuthSession.accessToken ?: "",
+                            idToken = AuthSession.idToken,
                             refreshToken = AuthSession.refreshToken,
                             username = AuthSession.username,
                             expiresAtSeconds = AuthSession.expiresAtSeconds,
@@ -102,6 +105,44 @@ class AuthManager(private val context: Context) {
                 }
             }
         }
+    }
+
+    suspend fun ensureApiSession(): Result<Boolean> {
+        if (!AuthSession.easyAuthToken.isNullOrBlank() || ApiClient.hasSessionCookies()) {
+            return Result.success(true)
+        }
+
+        val accessToken = AuthSession.accessToken
+        if (accessToken.isNullOrBlank()) {
+            return Result.success(false)
+        }
+
+        val (easyAuthToken, easyAuthError) = EasyAuthBridge.exchangeForSession(
+            accessToken = accessToken,
+            idToken = AuthSession.idToken
+        )
+        AuthSession.easyAuthToken = easyAuthToken
+        val sessionOk = !easyAuthToken.isNullOrBlank() || ApiClient.hasSessionCookies()
+
+        if (sessionOk) {
+            AuthStore.save(
+                context,
+                PersistedAuth(
+                    accessToken = AuthSession.accessToken ?: "",
+                    idToken = AuthSession.idToken,
+                    refreshToken = AuthSession.refreshToken,
+                    username = AuthSession.username,
+                    expiresAtSeconds = AuthSession.expiresAtSeconds,
+                    easyAuthToken = AuthSession.easyAuthToken,
+                    principalName = AuthSession.principalName,
+                    principalId = AuthSession.principalId
+                )
+            )
+            return Result.success(true)
+        }
+
+        AuthSession.lastError = easyAuthError ?: "Unable to establish API auth session"
+        return Result.failure(IllegalStateException(AuthSession.lastError ?: "Unable to establish API auth session"))
     }
 
     fun signOut() {

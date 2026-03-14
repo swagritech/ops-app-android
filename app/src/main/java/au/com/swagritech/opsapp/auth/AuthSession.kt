@@ -5,6 +5,9 @@ object AuthSession {
     var accessToken: String? = null
 
     @Volatile
+    var idToken: String? = null
+
+    @Volatile
     var username: String? = null
 
     @Volatile
@@ -27,6 +30,7 @@ object AuthSession {
 
     fun clear() {
         accessToken = null
+        idToken = null
         username = null
         lastError = null
         refreshToken = null

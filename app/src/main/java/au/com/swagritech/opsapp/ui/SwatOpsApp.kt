@@ -51,7 +51,15 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
         authManager.refreshIfNeeded()
         vm.refreshQueueCount(activity.applicationContext)
         if (!AuthSession.accessToken.isNullOrBlank()) {
-            vm.setMicrosoftSignedIn(AuthSession.username ?: "Microsoft User")
+            val sessionReady = authManager.ensureApiSession().getOrDefault(false)
+            if (sessionReady) {
+                vm.setMicrosoftSignedIn(AuthSession.username ?: "Microsoft User")
+            } else {
+                vm.setMicrosoftSignInError(
+                    AuthSession.lastError
+                        ?: "Microsoft sign-in found, but API session is missing. Sign in with Microsoft again."
+                )
+            }
         } else if (!AuthSession.lastError.isNullOrBlank()) {
             vm.setMicrosoftSignInError(AuthSession.lastError ?: "Sign-in failed")
         }
