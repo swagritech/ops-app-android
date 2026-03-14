@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import au.com.swagritech.opsapp.api.ApiClient
 import net.openid.appauth.AuthorizationRequest
 import net.openid.appauth.AuthorizationService
 import net.openid.appauth.AuthorizationServiceConfiguration
@@ -106,5 +107,6 @@ class AuthManager(private val context: Context) {
     fun signOut() {
         AuthSession.clear()
         AuthStore.clear(context)
+        ApiClient.clearSessionCookies()
     }
 }

@@ -15,11 +15,17 @@ class ApiHttpException(val code: Int, message: String) : Exception(message)
 class OpsRepository(
     private val api: OpsApiService = ApiClient.retrofit.create(OpsApiService::class.java)
 ) {
+    private fun asHttpException(code: Int, rawBody: String?): ApiHttpException {
+        val detail = rawBody?.trim()?.take(300).orEmpty()
+        val message = if (detail.isBlank()) "HTTP $code" else "HTTP $code: $detail"
+        return ApiHttpException(code, message)
+    }
+
     suspend fun verifyIdentity(): Result<AuthIdentityResponse> {
         return try {
             val response = api.getAuthIdentity()
             if (!response.isSuccessful) {
-                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+                Result.failure(asHttpException(response.code(), response.errorBody()?.string()))
             } else {
                 Result.success(response.body() ?: AuthIdentityResponse())
             }
@@ -34,7 +40,7 @@ class OpsRepository(
         return try {
             val response = api.startJob(payload)
             if (!response.isSuccessful) {
-                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+                Result.failure(asHttpException(response.code(), response.errorBody()?.string()))
             } else {
                 Result.success(response.body() ?: StartJobResponse(status = "error", error = "Empty response"))
             }
@@ -49,7 +55,7 @@ class OpsRepository(
         return try {
             val response = api.getActiveJob(pilot)
             if (!response.isSuccessful) {
-                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+                Result.failure(asHttpException(response.code(), response.errorBody()?.string()))
             } else {
                 Result.success(response.body() ?: ActiveJobResponse(status = "error", error = "Empty response"))
             }
@@ -64,7 +70,7 @@ class OpsRepository(
         return try {
             val response = api.createFlight(payload)
             if (!response.isSuccessful) {
-                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+                Result.failure(asHttpException(response.code(), response.errorBody()?.string()))
             } else {
                 Result.success(response.body() ?: CreateFlightResponse(status = "error", error = "Empty response"))
             }

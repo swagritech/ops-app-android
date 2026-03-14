@@ -4,6 +4,7 @@ import au.com.swagritech.opsapp.BuildConfig
 import au.com.swagritech.opsapp.auth.AuthSession
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -20,15 +21,17 @@ object ApiClient {
     private val httpClient: OkHttpClient by lazy {
         val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         OkHttpClient.Builder()
+            .cookieJar(SessionCookieJar)
             .addInterceptor { chain ->
                 val token = AuthSession.accessToken
                 val easyAuthToken = AuthSession.easyAuthToken
                 val principalName = AuthSession.principalName
                 val principalId = AuthSession.principalId
                 val requestBuilder = chain.request().newBuilder()
+                val hasSessionCookie = SessionCookieJar.hasCookiesFor(chain.request().url)
                 if (!easyAuthToken.isNullOrBlank()) {
                     requestBuilder.addHeader("X-ZUMO-AUTH", easyAuthToken)
-                } else if (!token.isNullOrBlank()) {
+                } else if (!token.isNullOrBlank() && !hasSessionCookie) {
                     // Fallback only when EasyAuth token has not yet been established.
                     requestBuilder.addHeader("Authorization", "Bearer $token")
                 }
@@ -45,6 +48,23 @@ object ApiClient {
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
     }
+
+    val authHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .cookieJar(SessionCookieJar)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    fun clearSessionCookies() {
+        SessionCookieJar.clear()
+    }
+
+    fun hasSessionCookies(): Boolean = runCatching {
+        val url = BuildConfig.API_BASE_URL.toHttpUrl()
+        SessionCookieJar.hasCookiesFor(url)
+    }.getOrDefault(false)
 
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()

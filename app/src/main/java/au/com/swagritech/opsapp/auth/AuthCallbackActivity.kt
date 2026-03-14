@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
+import au.com.swagritech.opsapp.api.ApiClient
 import au.com.swagritech.opsapp.BuildConfig
 import au.com.swagritech.opsapp.MainActivity
 import java.net.URI
@@ -15,7 +16,6 @@ import net.openid.appauth.AuthorizationException
 import net.openid.appauth.AuthorizationResponse
 import net.openid.appauth.AuthorizationService
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
@@ -67,8 +67,9 @@ class AuthCallbackActivity : ComponentActivity() {
                         idToken = tokenResponse.idToken
                     )
                     AuthSession.easyAuthToken = easyAuth
+                    val hasSessionCookie = ApiClient.hasSessionCookies()
 
-                    if (easyAuth.isNullOrBlank()) {
+                    if (easyAuth.isNullOrBlank() && !hasSessionCookie) {
                         AuthSession.lastError = easyAuthError
                             ?: "Signed in, but EasyAuth session token was not returned"
                     } else {
@@ -134,7 +135,7 @@ class AuthCallbackActivity : ComponentActivity() {
 
     private fun exchangeForEasyAuthToken(accessToken: String?, idToken: String?): Pair<String?, String?> {
         val url = buildEasyAuthLoginUrl() ?: return (null to "EasyAuth login URL could not be built")
-        val client = OkHttpClient()
+        val client = ApiClient.authHttpClient
         val jsonType = "application/json; charset=utf-8".toMediaType()
 
         val diagnostics = mutableListOf<String>()
@@ -163,7 +164,10 @@ class AuthCallbackActivity : ComponentActivity() {
                         JSONObject(body).optString("authenticationToken").ifBlank { null }
                     }.getOrNull()
                     if (!token.isNullOrBlank()) return token to null
-                    diagnostics.add("HTTP ${resp.code}: no authenticationToken in body")
+                    if (ApiClient.hasSessionCookies()) {
+                        return null to null
+                    }
+                    diagnostics.add("HTTP ${resp.code}: no authenticationToken in body and no EasyAuth session cookie")
                 } else {
                     val body = resp.body?.string().orEmpty().take(200)
                     diagnostics.add("HTTP ${resp.code}: $body")
