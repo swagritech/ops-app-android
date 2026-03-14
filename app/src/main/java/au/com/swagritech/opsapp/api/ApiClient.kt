@@ -2,6 +2,8 @@ package au.com.swagritech.opsapp.api
 
 import au.com.swagritech.opsapp.BuildConfig
 import au.com.swagritech.opsapp.auth.AuthSession
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,6 +11,12 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
+    private val moshi: Moshi by lazy {
+        Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+    }
+
     private val httpClient: OkHttpClient by lazy {
         val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         OkHttpClient.Builder()
@@ -30,7 +38,7 @@ object ApiClient {
         Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(httpClient)
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 }
