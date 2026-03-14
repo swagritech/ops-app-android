@@ -10,7 +10,9 @@ import net.openid.appauth.AuthorizationRequest
 import net.openid.appauth.AuthorizationService
 import net.openid.appauth.AuthorizationServiceConfiguration
 import net.openid.appauth.TokenRequest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 class AuthManager(private val context: Context) {
@@ -117,10 +119,12 @@ class AuthManager(private val context: Context) {
             return Result.success(false)
         }
 
-        val (easyAuthToken, easyAuthError) = EasyAuthBridge.exchangeForSession(
-            accessToken = accessToken,
-            idToken = AuthSession.idToken
-        )
+        val (easyAuthToken, easyAuthError) = withContext(Dispatchers.IO) {
+            EasyAuthBridge.exchangeForSession(
+                accessToken = accessToken,
+                idToken = AuthSession.idToken
+            )
+        }
         AuthSession.easyAuthToken = easyAuthToken
         val sessionOk = !easyAuthToken.isNullOrBlank() || ApiClient.hasSessionCookies()
 
