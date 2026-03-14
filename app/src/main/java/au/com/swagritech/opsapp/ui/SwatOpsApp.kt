@@ -64,6 +64,7 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 message = vm.uiState.message,
                 signedInUsername = vm.uiState.signedInUsername,
                 microsoftSignedIn = vm.uiState.microsoftSignedIn,
+                currentPilot = vm.uiState.currentPilot,
                 onMicrosoftSignIn = { authManager.startSignIn(activity) },
                 onVerifyIdentity = { vm.verifyIdentity() },
                 onPilotChange = { vm.setPilotName(it) },
@@ -136,13 +137,12 @@ private fun LoginScreen(
     message: String,
     signedInUsername: String,
     microsoftSignedIn: Boolean,
+    currentPilot: String,
     onPilotChange: (String) -> Unit,
     onMicrosoftSignIn: () -> Unit,
     onVerifyIdentity: () -> Unit,
     onContinue: () -> Unit
 ) {
-    var pilotName by remember { mutableStateOf("") }
-
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -164,9 +164,8 @@ private fun LoginScreen(
             }
 
             OutlinedTextField(
-                value = pilotName,
+                value = currentPilot,
                 onValueChange = {
-                    pilotName = it
                     onPilotChange(it)
                 },
                 label = { Text("Pilot Name") },
