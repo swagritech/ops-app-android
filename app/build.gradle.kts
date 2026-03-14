@@ -20,7 +20,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        manifestPlaceholders["appAuthRedirectScheme"] = "swatopsappauthunused"
+        manifestPlaceholders["appAuthRedirectScheme"] = "swatops"
 
         buildConfigField("String", "API_BASE_URL", "\"https://api.swagritech.com.au/api/\"")
         buildConfigField("String", "AUTH_SCOPE", "\"openid profile email offline_access User.Read\"")
