@@ -68,8 +68,10 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 onVerifyIdentity = { vm.verifyIdentity() },
                 onPilotChange = { vm.setPilotName(it) },
                 onContinue = {
-                    if (vm.uiState.identityVerified) {
+                    if (vm.uiState.microsoftSignedIn || vm.uiState.identityVerified) {
                         navController.navigate(Routes.Dashboard)
+                    } else {
+                        vm.setMessage("Sign in with Microsoft first")
                     }
                 }
             )
