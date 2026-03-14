@@ -42,10 +42,11 @@ class OpsViewModel(
     }
 
     fun setMicrosoftSignedIn(username: String?) {
+        val resolvedPilot = resolvePilotDisplayName(username)
         uiState = uiState.copy(
             microsoftSignedIn = true,
             signedInUsername = username.orEmpty(),
-            currentPilot = if (uiState.currentPilot.isBlank()) (username ?: "") else uiState.currentPilot,
+            currentPilot = if (uiState.currentPilot.isBlank()) resolvedPilot else uiState.currentPilot,
             message = "Microsoft sign-in successful"
         )
     }
@@ -295,6 +296,28 @@ class OpsViewModel(
             val minutes = Duration.between(start, end).toMinutes()
             minutes.toInt()
         }.getOrDefault(0)
+    }
+
+    private fun resolvePilotDisplayName(identity: String?): String {
+        val raw = identity?.trim().orEmpty()
+        if (raw.isBlank()) return ""
+
+        val explicitMap = mapOf(
+            "sean@swagritech.com.au" to "Sean Maynard",
+            "james@jhviticulture.com.au" to "James Harris"
+        )
+        val lower = raw.lowercase()
+        explicitMap[lower]?.let { return it }
+
+        // If no mapping exists, keep non-email names as-is, otherwise use local-part title case.
+        if (!raw.contains("@")) return raw
+        val local = raw.substringBefore("@")
+        return local
+            .split('.', '_', '-')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { token ->
+                token.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }
     }
 }
 

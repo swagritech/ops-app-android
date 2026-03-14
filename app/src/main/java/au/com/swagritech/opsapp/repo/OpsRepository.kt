@@ -16,27 +16,48 @@ class OpsRepository(
     private val api: OpsApiService = ApiClient.retrofit.create(OpsApiService::class.java)
 ) {
     suspend fun verifyIdentity(): Result<AuthIdentityResponse> {
-        val response = api.getAuthIdentity()
-        if (!response.isSuccessful) {
-            return Result.failure(IllegalStateException("HTTP ${response.code()}"))
+        return try {
+            val response = api.getAuthIdentity()
+            if (!response.isSuccessful) {
+                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+            } else {
+                Result.success(response.body() ?: AuthIdentityResponse())
+            }
+        } catch (io: IOException) {
+            Result.failure(io)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return Result.success(response.body() ?: AuthIdentityResponse())
     }
 
     suspend fun startJob(payload: StartJobRequest): Result<StartJobResponse> {
-        val response = api.startJob(payload)
-        if (!response.isSuccessful) {
-            return Result.failure(IllegalStateException("HTTP ${response.code()}"))
+        return try {
+            val response = api.startJob(payload)
+            if (!response.isSuccessful) {
+                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+            } else {
+                Result.success(response.body() ?: StartJobResponse(status = "error", error = "Empty response"))
+            }
+        } catch (io: IOException) {
+            Result.failure(io)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return Result.success(response.body() ?: StartJobResponse(status = "error", error = "Empty response"))
     }
 
     suspend fun getActiveJob(pilot: String): Result<ActiveJobResponse> {
-        val response = api.getActiveJob(pilot)
-        if (!response.isSuccessful) {
-            return Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+        return try {
+            val response = api.getActiveJob(pilot)
+            if (!response.isSuccessful) {
+                Result.failure(ApiHttpException(response.code(), "HTTP ${response.code()}"))
+            } else {
+                Result.success(response.body() ?: ActiveJobResponse(status = "error", error = "Empty response"))
+            }
+        } catch (io: IOException) {
+            Result.failure(io)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return Result.success(response.body() ?: ActiveJobResponse(status = "error", error = "Empty response"))
     }
 
     suspend fun createFlight(payload: CreateFlightRequest): Result<CreateFlightResponse> {
