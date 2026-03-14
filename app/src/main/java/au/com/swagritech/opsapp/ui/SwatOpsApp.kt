@@ -73,7 +73,10 @@ fun SwatOpsApp(activity: Activity, navController: NavHostController = rememberNa
                 signedInUsername = vm.uiState.signedInUsername,
                 microsoftSignedIn = vm.uiState.microsoftSignedIn,
                 currentPilot = vm.uiState.currentPilot,
-                onMicrosoftSignIn = { authManager.startSignIn(activity) },
+                onMicrosoftSignIn = {
+                    vm.setMessage("")
+                    authManager.startSignIn(activity)
+                },
                 onVerifyIdentity = { vm.verifyIdentity() },
                 onPilotChange = { vm.setPilotName(it) },
                 onContinue = {

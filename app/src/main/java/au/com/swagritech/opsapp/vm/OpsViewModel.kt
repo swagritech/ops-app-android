@@ -52,7 +52,10 @@ class OpsViewModel(
     }
 
     fun setMicrosoftSignInError(message: String) {
-        uiState = uiState.copy(microsoftSignedIn = false, message = message)
+        uiState = uiState.copy(
+            microsoftSignedIn = false,
+            message = userFriendlyAuthMessage(message)
+        )
     }
 
     fun setMessage(message: String) {
@@ -318,6 +321,17 @@ class OpsViewModel(
             .joinToString(" ") { token ->
                 token.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
             }
+    }
+
+    private fun userFriendlyAuthMessage(raw: String): String {
+        val lower = raw.lowercase()
+        return when {
+            "idx10511" in lower || "signature validation failed" in lower ->
+                "Session expired. Tap Sign in with Microsoft again."
+            "authorization response missing" in lower ->
+                "Sign-in did not complete. Please try Sign in with Microsoft again."
+            else -> raw
+        }
     }
 }
 

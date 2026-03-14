@@ -14,42 +14,30 @@ object EasyAuthBridge {
         val client = ApiClient.authHttpClient
         val jsonType = "application/json; charset=utf-8".toMediaType()
 
-        val diagnostics = mutableListOf<String>()
-        val payloads = mutableListOf<JSONObject>()
-        if (!accessToken.isNullOrBlank() || !idToken.isNullOrBlank()) {
-            val combined = JSONObject()
-            if (!accessToken.isNullOrBlank()) combined.put("access_token", accessToken)
-            if (!idToken.isNullOrBlank()) combined.put("id_token", idToken)
-            payloads.add(combined)
+        if (idToken.isNullOrBlank()) {
+            return null to "Session expired. Sign in with Microsoft again."
         }
-        if (!accessToken.isNullOrBlank()) payloads.add(JSONObject().put("access_token", accessToken))
-        if (!idToken.isNullOrBlank()) payloads.add(JSONObject().put("id_token", idToken))
 
-        for (payload in payloads) {
-            val request = Request.Builder()
-                .url(url)
-                .post(payload.toString().toRequestBody(jsonType))
-                .addHeader("Content-Type", "application/json")
-                .build()
+        val payload = JSONObject().put("id_token", idToken)
+        val request = Request.Builder()
+            .url(url)
+            .post(payload.toString().toRequestBody(jsonType))
+            .addHeader("Content-Type", "application/json")
+            .build()
 
-            val response = client.newCall(request).execute()
-            response.use { resp ->
-                if (resp.isSuccessful) {
-                    val body = resp.body?.string().orEmpty()
-                    val token = runCatching {
-                        JSONObject(body).optString("authenticationToken").ifBlank { null }
-                    }.getOrNull()
-                    if (!token.isNullOrBlank()) return token to null
-                    if (ApiClient.hasSessionCookies()) return null to null
-                    diagnostics.add("HTTP ${resp.code}: no authenticationToken in body and no EasyAuth session cookie")
-                } else {
-                    val body = resp.body?.string().orEmpty().take(200)
-                    diagnostics.add("HTTP ${resp.code}: $body")
-                }
+        val response = client.newCall(request).execute()
+        response.use { resp ->
+            if (resp.isSuccessful) {
+                val body = resp.body?.string().orEmpty()
+                val token = runCatching {
+                    JSONObject(body).optString("authenticationToken").ifBlank { null }
+                }.getOrNull()
+                if (!token.isNullOrBlank()) return token to null
+                if (ApiClient.hasSessionCookies()) return null to null
+                return null to "Signed in, but API session was not established."
             }
+            return null to "Sign-in accepted, but API session could not be established (HTTP ${resp.code})."
         }
-
-        return null to diagnostics.joinToString(" | ").ifBlank { "EasyAuth exchange failed" }
     }
 
     private fun buildEasyAuthLoginUrl(): String? {
@@ -62,4 +50,3 @@ object EasyAuthBridge {
         }.getOrNull()
     }
 }
-
