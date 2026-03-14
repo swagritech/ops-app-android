@@ -16,12 +16,16 @@ object AuthSession {
     @Volatile
     var expiresAtSeconds: Long? = null
 
+    @Volatile
+    var easyAuthToken: String? = null
+
     fun clear() {
         accessToken = null
         username = null
         lastError = null
         refreshToken = null
         expiresAtSeconds = null
+        easyAuthToken = null
     }
 
     fun isAccessTokenLikelyValid(nowEpochSeconds: Long = System.currentTimeMillis() / 1000L): Boolean {

@@ -22,9 +22,13 @@ object ApiClient {
         OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val token = AuthSession.accessToken
+                val easyAuthToken = AuthSession.easyAuthToken
                 val requestBuilder = chain.request().newBuilder()
                 if (!token.isNullOrBlank()) {
                     requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                if (!easyAuthToken.isNullOrBlank()) {
+                    requestBuilder.addHeader("X-ZUMO-AUTH", easyAuthToken)
                 }
                 chain.proceed(requestBuilder.build())
             }
